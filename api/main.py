@@ -13,9 +13,11 @@ from typing import Optional
 
 TEXT_FOLDER = "files_text"
 EXCEL_FOLDER = "files_excel"
+IMAGE_FOLDER = "files_images"
 
 os.makedirs(TEXT_FOLDER, exist_ok=True)
 os.makedirs(EXCEL_FOLDER, exist_ok=True)
+os.makedirs(IMAGE_FOLDER, exist_ok=True)
 
 class ResearchInput(BaseModel):
     topic : str
@@ -258,4 +260,43 @@ async def forecast_endpoint(file: UploadFile = File(...), periods: int = 30):
         "task_id": task.id,
         "file_loc": file_loc,
         "periods": periods
+    }
+    
+@app.post("/deteksi-helmet")
+async def deteksi_helmet(file: UploadFile = File(...)):
+    allowed_extensions = [".jpg", ".jpeg", ".png"]
+    
+    file_extension = os.path.splitext(file.filename)[1].lower()
+    if file.content_type != "image/jpeg":
+        raise HTTPException(status_code=400, detail ="Invalid file type. Please upload a JPEG image.")
+
+    file_extension =os.path.splitext(file.filename)[1] or ".jpg"
+    
+    unique_name = f"{uuid.uuid4().hex}{file_extension}"
+    file_loc = os.path.join(IMAGE_FOLDER, unique_name)
+
+    content = await file.read()
+    with open(file_loc, "wb") as f:
+        f.write(content)
+
+    task = celeryTask.deteksi_helmet.delay(file_loc)
+    if file_extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail="File must be an image (.jpg, .jpeg, .png)"
+        )
+
+    unique_name = f"{uuid.uuid4().hex}{file_extension}"
+    file_loc = os.path.join("files_images", unique_name)
+
+    content = await file.read()
+    with open(file_loc, "wb") as f:
+        f.write(content)
+
+    task = celeryTask.deteksi_helmet.delay(file_loc)
+
+    return {
+        "status": "processing",
+        "task_id": task.id,
+        "file_loc": file_loc
     }

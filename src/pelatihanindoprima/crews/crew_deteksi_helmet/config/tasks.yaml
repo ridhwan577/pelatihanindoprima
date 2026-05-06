@@ -1,0 +1,15 @@
+task_helmet_detection:
+  description: >
+    Your task is to detect object and pass the result in structured JSON format from tool 'Tool helmet detection' using {image} as input.
+  expected_output: >
+    Just show raw result from the tool without any explanation, and make sure the result is in JSON format.
+  agent: agent_helmet_detection
+
+task_helmet_analyzer:
+  description: >
+    Analyze the result from task 'task_helmet_detection' and extract the main insights.
+  expected_output: >
+    A list of insights in JSON format, with each insight containing a title and a description.
+  agent: analyst_helmet_detection
+  context: >
+    - task_helmet_detection

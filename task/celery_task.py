@@ -6,8 +6,7 @@ from pelatihanindoprima.crews.file_analyzer.file_analyzer import FileAnalyzer
 from pelatihanindoprima.crews.excel_analyzer.excel_analyzer import ExcelAnalyzer
 from pelatihanindoprima.crews.crew_anomali.crew_anomali import CrewAnomali
 from pelatihanindoprima.crews.crew_predict.crew_predict import CrewPredict
-
-
+from pelatihanindoprima.crews.crew_deteksi_helmet.crew_deteksi_helmet import CrewDeteksiHelmet
 
 import logging
 import traceback
@@ -87,6 +86,24 @@ def predict_excel(self, file: str, periods: int = 30):
         result = CrewPredict().crew().kickoff(inputs={
             "file": file,
             "periods": periods
+        })
+
+        return str(result)
+
+    except Exception as e:
+        logger.error(f'Task failed with error: {e}\n{traceback.format_exc()}')
+        raise e
+
+@celery_app.task(bind=True, name="crew-deteksi-helmet")
+def deteksi_helmet(self, image: str):
+    self.update_state(
+        state='RUNNING',
+        meta={'current': f'Helmet detection processing for {image}'}
+    )
+
+    try:
+        result = CrewDeteksiHelmet().crew().kickoff(inputs={
+            "image": image
         })
 
         return str(result)
